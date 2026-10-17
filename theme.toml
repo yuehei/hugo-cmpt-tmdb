@@ -1,0 +1,7 @@
+name = "hugo-cmpt-tmdb"
+license = "MIT"
+description = "Build-time TMDB movie and TV cards, with local poster caching and FixIt v1 styles."
+tags = ["hugo", "component", "tmdb", "fixit", "shortcodes"]
+min_version = "0.166.0"
+[author]
+name = "yuehei"

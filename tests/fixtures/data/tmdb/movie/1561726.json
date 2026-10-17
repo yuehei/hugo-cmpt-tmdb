@@ -1,0 +1,48 @@
+{
+  "title": "偷天父子兵",
+  "original_title": "Masterplan",
+  "release_date": "2026-10-16",
+  "release_country": "FR",
+  "certification": "R",
+  "runtime": 109,
+  "genres": [
+    "动作",
+    "惊悚"
+  ],
+  "genre_ids": {
+    "动作": 28,
+    "惊悚": 53
+  },
+  "rating": 7.0,
+  "rating_as_of": "2026-10-17",
+  "summary": "一支盗窃小队盯上《蒙娜丽莎》，却在行动中遭遇接连意外与信任危机。",
+  "cover": "/images/tmdb/masterplan.jpg",
+  "personal_rating": 8.0,
+  "source_url": "https://www.themoviedb.org/movie/1561726-masterplan",
+  "directors": [
+    {
+      "name": "托马斯·文森特",
+      "id": 565121
+    }
+  ],
+  "writers": [
+    {
+      "name": "托马斯·文森特",
+      "id": 565121
+    },
+    {
+      "name": "David Wolstencroft",
+      "id": 55408
+    }
+  ],
+  "cast": [
+    {
+      "name": "斯坦利·图齐",
+      "id": 2283
+    },
+    {
+      "name": "西蒙娜·塔巴斯科",
+      "id": 1355967
+    }
+  ]
+}

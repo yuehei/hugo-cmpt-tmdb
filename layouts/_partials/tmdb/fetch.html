@@ -1,0 +1,87 @@
+{{- /* Never publish the API resource or print request errors (may contain API keys). */ -}}
+{{- $result := dict -}}
+{{- $api := .page.Site.Params.tmdb.api | default dict -}}
+{{- $base := partial "tmdb/endpoint.html" (dict "url" ($api.base_url | default "https://api.themoviedb.org/3") "name" "base_url") -}}
+{{- /* errorf does not abort template execution: never request a rejected endpoint. */ -}}
+{{- if $base -}}
+{{- $credentials := partial "tmdb/credentials.html" $api -}}
+{{- $region := $api.region | default "US" -}}
+{{- if not (findRE `^[A-Z]{2}$` $region) -}}{{- errorf "tmdb: api.region must be a two-letter uppercase country code" -}}{{- end -}}
+{{- $append := cond (eq .type "movie") "release_dates,credits" "content_ratings,aggregate_credits" -}}
+{{- $query := querify "language" .language "append_to_response" $append -}}
+{{- $cacheURL := printf "%s/%s/%s?%s" $base .type .id $query -}}
+{{- $url := $cacheURL -}}
+{{- $headers := dict "Accept" "application/json" -}}
+{{- if $credentials.token -}}
+  {{- $headers = merge (dict "Authorization" (printf "Bearer %s" $credentials.token)) $headers -}}
+{{- else if $credentials.key -}}
+  {{- $url = printf "%s&%s" $url (querify "api_key" $credentials.key) -}}
+{{- end -}}
+{{- $request := dict "headers" $headers "timeout" ($api.timeout | default "15s") "key" (printf "tmdb-data-%s" (crypto.SHA256 $cacheURL)) -}}
+{{- with try (resources.GetRemote $url $request) -}}
+  {{- if not .Err -}}
+    {{- with .Value -}}
+      {{- with try (transform.Unmarshal .Content) -}}
+        {{- if not .Err -}}
+          {{- $data := .Value -}}
+          {{- $matchesID := false -}}
+          {{- if reflect.IsMap $data -}}
+            {{- $responseID := try (float ($data.id | default -1)) -}}
+            {{- if not $responseID.Err -}}{{- $matchesID = eq $responseID.Value (float $.id) -}}{{- end -}}
+          {{- end -}}
+          {{- if and $matchesID (not (eq $data.success false)) -}}
+            {{- $title := $data.title | default $data.name -}}
+            {{- if and $title (eq (printf "%T" $title) "string") -}}
+              {{- $result = dict "title" $title "original_title" ($data.original_title | default $data.original_name | default "") "release_date" ($data.release_date | default $data.first_air_date | default "") "summary" ($data.overview | default "") "poster_path" ($data.poster_path | default "") "genres" (slice) -}}
+              {{- $credits := $data.credits -}}
+              {{- if eq $.type "tv" -}}{{- $credits = $data.aggregate_credits -}}{{- end -}}
+              {{- $result = merge $result (partial "tmdb/credits.html" $credits) -}}
+              {{- $genres := slice -}}
+              {{- $genreIDs := dict -}}
+              {{- if reflect.IsSlice $data.genres -}}
+                {{- range $data.genres -}}
+                  {{- if reflect.IsMap . -}}{{- if and .name (eq (printf "%T" .name) "string") -}}{{- $genres = $genres | append .name -}}{{- if .id -}}{{- $genreIDs = merge $genreIDs (dict .name .id) -}}{{- end -}}{{- end -}}{{- end -}}
+                {{- end -}}
+              {{- end -}}
+              {{- $result = merge $result (dict "genres" $genres "genre_ids" $genreIDs) -}}
+              {{- $runtime := $data.runtime | default 0 -}}
+              {{- if and (eq $.type "tv") (reflect.IsSlice $data.episode_run_time) -}}{{- with $data.episode_run_time -}}{{- $runtime = index . 0 -}}{{- end -}}{{- end -}}
+              {{- $result = merge $result (dict "runtime" $runtime) -}}
+              {{- if eq $.type "movie" -}}
+                {{- with $data.release_dates -}}{{- if reflect.IsMap . -}}{{- if reflect.IsSlice .results -}}
+                  {{- range .results -}}{{- if reflect.IsMap . -}}{{- if and (eq .iso_3166_1 $region) (reflect.IsSlice .release_dates) -}}
+                    {{- /* Prefer earliest theatrical release (including limited), then digital, premiere, physical, TV. */ -}}
+                    {{- $selected := dict -}}
+                    {{- $releases := .release_dates -}}
+                    {{- /* 同一发行类型取最早日期，避免 API 首条重映记录替换首映年份。 */ -}}
+                    {{- range $kinds := slice (slice "2" "3") (slice "4") (slice "1") (slice "5") (slice "6") -}}{{- if not $selected -}}
+                      {{- range $releases -}}{{- if reflect.IsMap . -}}{{- if and (in $kinds (printf "%v" .type)) (findRE `^[0-9]{4}-[0-9]{2}-[0-9]{2}` (printf "%v" (.release_date | default ""))) -}}
+                        {{- if or (not $selected) (lt .release_date $selected.release_date) -}}{{- $selected = . -}}{{- end -}}
+                      {{- end -}}{{- end -}}{{- end -}}
+                    {{- end -}}{{- end -}}
+                    {{- with $selected -}}{{- $regionalDate := substr .release_date 0 10 -}}{{- $result = merge $result (dict "release_date" $regionalDate "release_country" $region "certification" (.certification | default "")) -}}{{- end -}}
+                  {{- end -}}{{- end -}}{{- end -}}
+                {{- end -}}{{- end -}}{{- end -}}
+              {{- else -}}
+                {{- with $data.content_ratings -}}{{- if reflect.IsMap . -}}{{- if reflect.IsSlice .results -}}
+                  {{- range .results -}}{{- if reflect.IsMap . -}}{{- if eq .iso_3166_1 $region -}}{{- $result = merge $result (dict "certification" (.rating | default "")) -}}{{- end -}}{{- end -}}{{- end -}}
+                {{- end -}}{{- end -}}{{- end -}}
+              {{- end -}}
+              {{- if and (isset $data "vote_average") (isset $data "vote_count") -}}
+                {{- $rating := try (float $data.vote_average) -}}
+                {{- $votes := try (float $data.vote_count) -}}
+                {{- if and (not $rating.Err) (not $votes.Err) -}}
+                  {{- if and (gt $votes.Value 0) (ge $rating.Value 0.0) (le $rating.Value 10.0) -}}
+                    {{- $result = merge $result (dict "rating" $rating.Value "vote_count" $votes.Value) -}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+{{- return $result -}}

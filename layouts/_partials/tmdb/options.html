@@ -1,0 +1,25 @@
+{{- /* Resolve false explicitly: map merge may treat it as an empty value. */ -}}
+{{- $values := newScratch -}}
+{{- $defaults := dict "source" "hybrid" "show_attribution" true "show_rating" true "show_summary" true "show_personal_rating" true "show_genres" true "show_date" true "new_tab" true "language" "zh-CN" -}}
+{{- $site := .page.Site.Params.tmdb | default dict -}}
+{{- $page := .page.Params.tmdb | default dict -}}
+{{- range $key, $default := $defaults -}}
+  {{- $value := $default -}}
+  {{- if isset $site $key -}}{{- $value = index $site $key -}}{{- end -}}
+  {{- if isset $page $key -}}{{- $value = index $page $key -}}{{- end -}}
+  {{- if isset $.params $key -}}{{- $value = index $.params $key -}}{{- end -}}
+  {{- if eq $key "source" -}}
+    {{- if not (in (slice "hybrid" "local" "api") $value) -}}{{- errorf "tmdb: source must be hybrid, local or api (%s)" $.position -}}{{- end -}}
+  {{- else if eq $key "language" -}}
+    {{- if not (findRE `^[a-z]{2,3}(-[A-Z]{2})?$` (printf "%v" $value)) -}}{{- errorf "tmdb: invalid language (%s)" $.position -}}{{- end -}}
+  {{- else -}}
+    {{- if not (in (slice "true" "false") (printf "%v" $value)) -}}{{- errorf "tmdb: %s must be true or false (%s)" $key $.position -}}{{- end -}}
+    {{- $value = eq (printf "%v" $value) "true" -}}
+  {{- end -}}
+  {{- $values.Set $key $value -}}
+{{- end -}}
+{{- /* 直接指定我的评分即展示；显式 show_personal_rating=false 仍可隐藏。 */ -}}
+{{- if and (isset .params "personal_rating") (not (isset .params "show_personal_rating")) -}}
+  {{- $values.Set "show_personal_rating" true -}}
+{{- end -}}
+{{- return $values.Values -}}

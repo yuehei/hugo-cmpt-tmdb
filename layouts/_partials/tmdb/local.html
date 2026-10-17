@@ -1,0 +1,27 @@
+{{- /* 按配置目录读取消费站点资料，API 模式也使用它做本地覆盖。 */ -}}
+{{- $settings := .page.Site.Params.tmdb.local | default dict -}}
+{{- $dir := $settings.data_dir | default "data/tmdb" -}}
+{{- $result := dict -}}
+{{- $valid := eq (printf "%T" $dir) "string" -}}
+{{- if $valid -}}
+  {{- $dir = path.Clean $dir -}}
+  {{- $valid = not (or (strings.HasPrefix $dir "/") (strings.HasPrefix $dir "../") (eq $dir "..") (strings.Contains $dir ":") (strings.Contains $dir `\`)) -}}
+{{- end -}}
+{{- if not $valid -}}
+  {{- errorf "tmdb: local.data_dir must be a directory relative to the site root" -}}
+{{- else -}}
+  {{- $loaded := false -}}
+  {{- /* 明确格式优先级，避免同时存在多个版本时悄悄合并。 */ -}}
+  {{- range $ext := slice "json" "yaml" "yml" "toml" -}}
+    {{- $file := path.Join $dir $.type (printf "%s.%s" $.id $ext) -}}
+    {{- if and (not $loaded) (os.FileExists $file) -}}
+      {{- $loaded = true -}}
+      {{- $format := cond (eq $ext "yml") "yaml" $ext -}}
+      {{- $parsed := try (transform.Unmarshal (dict "format" $format) (os.ReadFile $file)) -}}
+      {{- if or $parsed.Err (not (reflect.IsMap $parsed.Value)) -}}
+        {{- errorf "tmdb: local data must be a valid JSON, YAML or TOML object (%s)" $.position -}}
+      {{- else -}}{{- $result = $parsed.Value -}}{{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

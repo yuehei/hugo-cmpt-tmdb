@@ -1,0 +1,19 @@
+baseURL = "https://example.org/"
+locale = "zh-cn"
+title = "TMDB 卡片示例"
+theme = ["FixIt", "hugo-cmpt-tmdb"]
+defaultContentLanguage = "zh-cn"
+[params]
+version = "1.0.X"
+[params.page]
+comment.enable = false
+[params.custom_partials]
+head = ["inject/tmdb.html"]
+# 示例站在构建时调用 API；请自行配置凭据，推荐使用不提交的 .tmdb 文件。
+[params.tmdb]
+source = "hybrid"
+[taxonomies]
+author = "authors"
+category = "categories"
+tag = "tags"
+collection = "collections"

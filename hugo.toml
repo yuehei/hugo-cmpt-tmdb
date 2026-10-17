@@ -1,0 +1,45 @@
+[module.hugoVersion]
+# 最低 Hugo 版本
+min = "0.166.0"
+
+[params.tmdb]
+# 数据源：hybrid 优先本地，有凭据时补全缺失条目；local 仅本地；api 始终获取远程资料
+source = "hybrid"
+# 资料语言：默认简体中文
+language = "zh-CN"
+# 在电影/电视剧类型后显示「TMDB ↗」来源链接
+show_attribution = true
+# 显示 TMDB 用户评分
+show_rating = true
+# 显示简介
+show_summary = true
+# 显示我的评分
+show_personal_rating = true
+# 显示影视类型（纯文字）
+show_genres = true
+# 显示年份、上映／首播日期与地区
+show_date = true
+# 在新标签页打开 TMDB 条目
+new_tab = true
+
+[params.tmdb.local]
+# 本地资料目录，相对消费站点根目录；保留 movie/<id>、tv/<id> 结构
+data_dir = "data/tmdb"
+
+[params.tmdb.api]
+# 配置中的凭据为空时读取的 TOML 文件，相对消费站点根目录
+credentials_file = ".tmdb"
+# 地区：用于选择上映日期和分级，与资料语言独立
+region = "US"
+# TMDB API 服务地址
+base_url = "https://api.themoviedb.org/3"
+# 海报服务地址
+image_base_url = "https://image.tmdb.org/t/p"
+# 海报下载尺寸
+poster_size = "w780"
+# 请求超时时间
+timeout = "15s"
+# API Read Access Token（优先使用；配置为空时读取站点根目录 .tmdb）
+token = ""
+# v3 API Key（未填写 token 时使用）
+api_key = ""

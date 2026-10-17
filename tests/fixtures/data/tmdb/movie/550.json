@@ -1,0 +1,32 @@
+{
+  "title": "搏击俱乐部",
+  "original_title": "Fight Club",
+  "release_date": "1999-10-15",
+  "genres": [
+    "剧情",
+    "惊悚"
+  ],
+  "rating": 8.4,
+  "summary": "饱受失眠困扰的上班族结识了性格张扬的泰勒，两人组建地下搏击俱乐部。随着参与者越来越多，这个释放压力的聚会逐渐失控。",
+  "cover": "/images/tmdb/fight-club.jpg",
+  "rating_as_of": "2026-10-17",
+  "source_url": "https://www.themoviedb.org/movie/550-fight-club",
+  "personal_rating": 8.0,
+  "certification": "R",
+  "release_country": "US",
+  "runtime": 139,
+  "genre_ids": {
+    "剧情": 18,
+    "惊悚": 53
+  },
+  "directors": [
+    "大卫·芬奇"
+  ],
+  "writers": [
+    "Jim Uhls"
+  ],
+  "cast": [
+    "爱德华·诺顿",
+    "布拉德·皮特"
+  ]
+}

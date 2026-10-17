@@ -1,0 +1,59 @@
+{{- /* Example: tmdb type="movie" id="550" */ -}}
+{{- $type := .Get "type" | default "movie" -}}
+{{- $id := printf "%v" (.Get "id" | default "") -}}
+{{- if not (in (slice "movie" "tv") $type) -}}
+  {{- errorf "tmdb: type must be movie or tv (%s)" .Position -}}
+{{- else if not (findRE `^[1-9][0-9]*$` $id) -}}
+  {{- errorf "tmdb: id must be a positive integer (%s)" .Position -}}
+{{- else -}}
+  {{- $options := partial "tmdb/options.html" (dict "page" .Page "params" .Params "position" .Position) -}}
+  {{- $local := partial "tmdb/local.html" (dict "page" .Page "type" $type "id" $id "position" .Position) -}}
+  {{- /* All sources normalize into one item; explicit shortcode fields win. */ -}}
+  {{- $fields := partial "tmdb/fields.html" (dict "params" .Params "position" .Position) -}}
+  {{- $remote := dict -}}
+  {{- /* A non-empty local title makes a usable record; rating-only overrides still need API data. */ -}}
+  {{- $hasLocal := false -}}
+  {{- if eq (printf "%T" $local.title) "string" -}}
+    {{- $hasLocal = ne (strings.TrimSpace $local.title) "" -}}
+  {{- end -}}
+  {{- $needsRemote := or (eq $options.source "api") (and (eq $options.source "hybrid") (not $hasLocal)) -}}
+  {{- $missingCredentials := false -}}
+  {{- if and (eq $options.source "hybrid") $needsRemote -}}
+    {{- $credentials := partial "tmdb/credentials.html" (.Site.Params.tmdb.api | default dict) -}}
+    {{- if not (or $credentials.token $credentials.key) -}}
+      {{- $needsRemote = false -}}
+      {{- $missingCredentials = true -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if $needsRemote -}}
+    {{- $remote = partialCached "tmdb/fetch.html" (dict "page" .Page "type" $type "id" $id "language" $options.language) $type $id $options.language .Site.Language.Lang (.Site.Params.tmdb.api.base_url | default "https://api.themoviedb.org/3") -}}
+    {{- if not $remote -}}
+      {{- if or $fields.title $local.title -}}
+        {{- warnf "tmdb: remote data unavailable for %s/%s; using local fallback (%s)" $type $id .Position -}}
+      {{- else -}}
+        {{- errorf "tmdb: data unavailable for %s/%s; check API credentials (params.tmdb.api.token or params.tmdb.api.api_key), API configuration/cache, or provide local data (%s)" $type $id .Position -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- /* API fills defaults; local data and then shortcode attributes override even zero/empty values. */ -}}
+  {{- $item := newScratch -}}
+  {{- range $key, $value := $remote -}}{{- $item.Set $key $value -}}{{- end -}}
+  {{- range $key, $value := $local -}}
+    {{- /* In hybrid mode an unusable local title must not overwrite the API title. */ -}}
+    {{- if not (and (eq $options.source "hybrid") (not $hasLocal) (eq $key "title")) -}}
+      {{- $item.Set $key $value -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $key, $value := $fields -}}{{- $item.Set $key $value -}}{{- end -}}
+  {{- if not ($item.Get "title") -}}
+    {{- if $missingCredentials -}}
+      {{- errorf "tmdb: hybrid source needs a local title or API credentials (params.tmdb.api.token/api_key or api.credentials_file) for %s/%s (%s)" $type $id .Position -}}
+    {{- else -}}
+      {{- errorf "tmdb: title is required in shortcode attributes or the configured local.data_dir/%s/%s.json (or YAML/TOML) (%s)" $type $id .Position -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $ctx := dict "page" .Page "item" $item.Values "type" $type "id" $id "options" $options "position" .Position -}}
+    {{- $cover := partial "tmdb/poster.html" $ctx -}}
+    {{- partial "tmdb/card.html" (merge (dict "cover" $cover) $ctx) -}}
+  {{- end -}}
+{{- end -}}

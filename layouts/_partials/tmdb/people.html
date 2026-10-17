@@ -1,0 +1,15 @@
+{{- /* Names without a person ID link to TMDB person search, never a guessed ID. */ -}}
+{{- $people := slice -}}{{- $input := . -}}
+{{- if not (reflect.IsSlice $input) -}}{{- $input = slice $input -}}{{- end -}}
+{{- range $input -}}
+  {{- $name := "" -}}{{- $id := "" -}}
+  {{- if reflect.IsMap . -}}{{- $name = .name | default "" -}}{{- $number := try (float (.id | default 0)) -}}
+    {{- if not $number.Err -}}{{- if and (gt $number.Value 0) (le $number.Value 9007199254740991.0) (eq $number.Value (math.Floor $number.Value)) -}}{{- $id = printf "%.0f" $number.Value -}}{{- end -}}{{- end -}}
+  {{- else if eq (printf "%T" .) "string" -}}{{- $name = strings.TrimSpace . -}}{{- end -}}
+  {{- if and $name (eq (printf "%T" $name) "string") -}}
+    {{- $url := printf "https://www.themoviedb.org/search/person?%s" (querify "query" $name) -}}
+    {{- if findRE `^[1-9][0-9]*$` $id -}}{{- $url = printf "https://www.themoviedb.org/person/%s" $id -}}{{- end -}}
+    {{- $people = $people | append (dict "name" $name "url" $url) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $people -}}

@@ -1,0 +1,4 @@
+{{- if .HasShortcode "tmdb" -}}
+  {{- $css := resources.Get "css/hugo-cmpt-tmdb.css" | minify | fingerprint "sha256" -}}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" crossorigin="anonymous">
+{{- end -}}

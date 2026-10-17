@@ -1,0 +1,2 @@
+{{- $group := .group -}}{{- $options := .options -}}
+{{ $group.label }}：{{ range $i, $person := $group.people }}{{ if $i }} / {{ end }}<a class="tmdb-card__person" href="{{ $person.url }}"{{ if $options.new_tab }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ $person.name }}</a>{{ end }}

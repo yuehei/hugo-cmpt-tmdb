@@ -1,0 +1,28 @@
+{
+  "title": "绝命毒师",
+  "original_title": "Breaking Bad",
+  "release_date": "2008-01-20",
+  "genres": [
+    "剧情",
+    "犯罪"
+  ],
+  "rating": 9.0,
+  "summary": "高中化学教师沃尔特确诊癌症后，为给家人留下积蓄，与昔日学生杰西合作制毒。原本关于生计的决定，让他一步步走向犯罪深渊。",
+  "cover": "/images/tmdb/breaking-bad.jpg",
+  "rating_as_of": "2026-10-17",
+  "source_url": "https://www.themoviedb.org/tv/1396-breaking-bad",
+  "personal_rating": 8.0,
+  "certification": "TV-MA",
+  "runtime": 47,
+  "genre_ids": {
+    "剧情": 18,
+    "犯罪": 80
+  },
+  "writers": [
+    "文斯·吉利根"
+  ],
+  "cast": [
+    "布莱恩·克兰斯顿",
+    "亚伦·保尔"
+  ]
+}

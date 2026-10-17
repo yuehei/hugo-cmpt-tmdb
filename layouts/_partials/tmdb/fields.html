@@ -1,0 +1,25 @@
+{{- /* Whitelist data fields, separate from source/display options. */ -}}
+{{- $fields := newScratch -}}
+{{- range $key := slice "title" "original_title" "release_date" "release_country" "certification" "runtime" "genres" "genre_ids" "cover" "poster_path" "rating" "summary" "subtitle" "directors" "writers" "cast" "personal_rating" -}}
+  {{- if isset $.params $key -}}
+    {{- $value := index $.params $key -}}
+    {{- if in (slice "genres" "directors" "writers" "cast") $key -}}
+      {{- /* Shortcode list syntax: genres="动作,惊悚"; empty explicitly hides genres. */ -}}
+      {{- if not (reflect.IsSlice $value) -}}
+        {{- $genres := slice -}}
+        {{- range split (printf "%v" $value) "," -}}{{- with strings.TrimSpace . -}}{{- $genres = $genres | append . -}}{{- end -}}{{- end -}}
+        {{- $value = $genres -}}
+      {{- end -}}
+    {{- else if eq $key "genre_ids" -}}
+      {{- if not (reflect.IsMap $value) -}}
+        {{- $parsed := try (transform.Unmarshal (printf "%v" $value)) -}}
+        {{- if or $parsed.Err (not (reflect.IsMap $parsed.Value)) -}}
+          {{- errorf "tmdb: genre_ids must be a JSON object (%s)" $.position -}}
+          {{- $value = dict -}}
+        {{- else -}}{{- $value = $parsed.Value -}}{{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $fields.Set $key $value -}}
+  {{- end -}}
+{{- end -}}
+{{- return $fields.Values -}}

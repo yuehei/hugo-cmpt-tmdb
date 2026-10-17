@@ -1,0 +1,18 @@
+{{- /* Validate without logging raw parse errors, which may contain credentials. */ -}}
+{{- $result := "" -}}
+{{- if eq (printf "%T" .url) "string" -}}
+  {{- $url := strings.TrimRight "/" .url -}}
+  {{- $parsed := try (urls.Parse $url) -}}
+  {{- if not $parsed.Err -}}
+    {{- $u := $parsed.Value -}}
+    {{- $valid := and (eq $u.Scheme "https") $u.Host -}}
+    {{- if and (eq $u.Scheme "http") (in (slice "localhost" "127.0.0.1" "::1") $u.Hostname) -}}{{- $valid = true -}}{{- end -}}
+    {{- if and $valid (not $u.User) (not $u.RawQuery) (not $u.ForceQuery) (not $u.Fragment) -}}
+      {{- $result = $url -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $result -}}
+  {{- errorf "tmdb: %s must be an HTTPS base URL without credentials, query or fragment (HTTP is only allowed on loopback)" .name -}}
+{{- end -}}
+{{- return $result -}}

@@ -1,0 +1,76 @@
+{{- $item := .item -}}
+{{- $labels := dict "movie" "电影" "tv" "电视剧" -}}
+{{- $url := printf "https://www.themoviedb.org/%s/%s" .type .id -}}
+{{- $date := printf "%v" ($item.release_date | default "") -}}
+{{- if not $item.title -}}{{- errorf "tmdb: title is required (%s)" .position -}}{{- end -}}
+<div class="tmdb-card{{ if not .cover }} tmdb-card--text-only{{ end }}" role="group" aria-label="{{ index $labels .type }}：{{ $item.title }}">
+  {{- with .cover }}
+  <a class="tmdb-card__cover-link" href="{{ $url }}"{{ if $.options.new_tab }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="在 TMDB 查看：{{ $item.title }}">
+    <img class="tmdb-card__cover" src="{{ . }}" alt="{{ $item.title }}海报" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="500" height="750">
+  </a>
+  {{- end }}
+  <div class="tmdb-card__body">
+    <div class="tmdb-card__header">
+      <div class="tmdb-card__header-main">
+        <span class="tmdb-card__type">
+          {{- index $labels .type -}}
+          {{- if .options.show_attribution -}}
+            <a class="tmdb-card__attribution" href="{{ $url }}"{{ if .options.new_tab }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="数据来源：TMDB">TMDB <span aria-hidden="true">↗</span></a>
+          {{- end -}}
+        </span>
+        <div class="tmdb-card__title-row">
+          <a class="tmdb-card__title" href="{{ $url }}"{{ if .options.new_tab }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ $item.title }}</a>
+          {{- if and .options.show_date (findRE `^[0-9]{4}-` $date) }}<span class="tmdb-card__year">({{ substr $date 0 4 }})</span>{{ end }}
+        </div>
+        {{- /* Second header row: certification, regional date, genres. */ -}}
+        <div class="tmdb-card__facts">
+          {{- with $item.certification }}<span class="tmdb-card__certification">{{ . }}</span>{{ end -}}
+          {{- if and .options.show_date $date }}<span class="tmdb-card__meta"><time datetime="{{ $date }}">{{ $date }}</time>{{ with $item.release_country }} ({{ . }}){{ end }}</span>{{ end -}}
+          {{- if .options.show_genres -}}{{- with $item.genres }}<span class="tmdb-card__genres">{{ delimit . "和" }}</span>{{ end -}}{{- end -}}
+        </div>
+      </div>
+    {{- if .options.show_rating }}
+    <div class="tmdb-card__rating">
+      {{- if isset $item "rating" -}}
+        {{- $rating := float $item.rating -}}
+        {{- if not (and (ge $rating 0.0) (le $rating 10.0)) -}}{{- errorf "tmdb: rating must be between 0 and 10 (%s)" .position -}}{{- end -}}
+        <span class="tmdb-card__score-badge" role="img" aria-label="TMDB 评分 {{ printf "%.1f" $rating }} / 10">
+          <svg class="tmdb-card__score-ring" viewBox="0 0 56 56" aria-hidden="true" focusable="false"><circle class="tmdb-card__score-track" cx="28" cy="28" r="23"/><circle class="tmdb-card__score-progress" cx="28" cy="28" r="23" pathLength="100" stroke-dasharray="{{ printf "%.1f 100" (mul $rating 10) }}"/></svg>
+          <span class="tmdb-card__score" aria-hidden="true">{{ printf "%.1f" $rating }}</span>
+        </span>
+        <span class="tmdb-card__rating-caption"><span class="tmdb-card__source">TMDB</span><span class="tmdb-card__scale">用户评分 / 10</span></span>
+      {{- else }}
+        <span class="tmdb-card__source">TMDB</span><span class="tmdb-card__meta">暂无评分</span>
+      {{- end }}
+    </div>
+    {{- end -}}
+    </div>
+    {{- if .options.show_summary -}}{{- with $item.summary }}<div class="tmdb-card__overview"><span class="tmdb-card__summary-title">简介</span><p class="tmdb-card__summary">{{ . }}</p></div>{{ end -}}{{- end -}}
+    {{- $creditGroups := slice -}}
+    {{- range $role := slice (dict "key" "directors" "label" "导演") (dict "key" "writers" "label" "编剧") (dict "key" "cast" "label" "主演") -}}
+      {{- with index $item .key -}}
+        {{- $people := partial "tmdb/people.html" . -}}
+        {{- with $people -}}
+          {{- $creditGroups = $creditGroups | append (dict "key" $role.key "label" $role.label "people" .) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if $creditGroups }}
+    <div class="tmdb-card__credits">
+      {{- range where $creditGroups "key" "ne" "cast" }}<p class="tmdb-card__crew tmdb-card__{{ .key }}">{{ partial "tmdb/credit-group.html" (dict "group" . "options" $.options) }}</p>{{ end -}}
+      {{- range where $creditGroups "key" "cast" }}<p class="tmdb-card__cast">{{ partial "tmdb/credit-group.html" (dict "group" . "options" $.options) }}</p>{{ end -}}
+    </div>
+    {{- else -}}{{- with $item.subtitle }}<p class="tmdb-card__credits">{{ . }}</p>{{ end -}}{{- end -}}
+    {{- if .options.show_personal_rating -}}
+      {{- if isset $item "personal_rating" }}
+      <div class="tmdb-card__personal-rating">
+        {{- if isset $item "personal_rating" -}}
+          {{- $rating := float $item.personal_rating -}}
+          {{- if not (and (ge $rating 0.0) (le $rating 10.0)) -}}{{- errorf "tmdb: personal_rating must be between 0 and 10 (%s)" .position -}}{{- end -}}
+          <span class="tmdb-card__personal">我的评分 {{ printf "%.1f" $rating }} / 10</span>
+        {{- end -}}
+      </div>
+      {{- end -}}
+    {{- end }}
+  </div>
+</div>

@@ -1,0 +1,41 @@
+{{- /* Publish only downloaded images, never hotlink the remote poster. */ -}}
+{{- $cover := .item.cover | default "" -}}
+{{- $result := "" -}}
+{{- $remote := "" -}}
+{{- if $cover -}}
+  {{- if and (strings.HasPrefix $cover "/") (not (strings.HasPrefix $cover "//")) -}}
+    {{- $result = $cover | relURL -}}
+  {{- else -}}
+    {{- $remote = partial "tmdb/endpoint.html" (dict "url" $cover "name" "cover") -}}
+  {{- end -}}
+{{- else if .item.poster_path -}}
+  {{- if not (findRE `^/[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)$` .item.poster_path) -}}
+    {{- errorf "tmdb: invalid poster_path (%s)" $.position -}}
+  {{- else -}}
+    {{- $api := $.page.Site.Params.tmdb.api | default dict -}}
+    {{- $base := partial "tmdb/endpoint.html" (dict "url" ($api.image_base_url | default "https://image.tmdb.org/t/p") "name" "image_base_url") -}}
+    {{- $size := $api.poster_size | default "w780" -}}
+    {{- if not (in (slice "w92" "w154" "w185" "w342" "w500" "w780" "original") $size) -}}{{- errorf "tmdb: invalid poster_size" -}}{{- end -}}
+    {{- if and $base (in (slice "w92" "w154" "w185" "w342" "w500" "w780" "original") $size) -}}
+      {{- $remote = printf "%s/%s%s" $base $size .item.poster_path -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- with $remote -}}
+  {{- $api := $.page.Site.Params.tmdb.api | default dict -}}
+  {{- $request := dict "timeout" ($api.timeout | default "15s") "key" (printf "tmdb-poster-%s" (crypto.SHA256 .)) -}}
+  {{- with try (resources.GetRemote . $request) -}}
+    {{- if not .Err -}}
+      {{- with .Value -}}
+        {{- if in (slice "image/jpeg" "image/png" "image/webp") .MediaType.Type -}}
+          {{- $ext := cond (eq .MediaType.Type "image/jpeg") "jpg" .MediaType.SubType -}}
+          {{- $path := printf "images/tmdb/%s/%s-%s.%s" $.type $.id (substr (crypto.SHA256 $remote) 0 12) $ext -}}
+          {{- $resource := resources.Copy $path . -}}
+          {{- $result = $resource.RelPermalink -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $result -}}{{- errorf "tmdb: unable to localize poster for %s/%s; check image API/network/cache or set a local cover (%s)" $.type $.id $.position -}}{{- end -}}
+{{- end -}}
+{{- return $result -}}

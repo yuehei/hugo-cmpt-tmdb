@@ -1,0 +1,15 @@
+{{- /* Movie credits and TV aggregate credits share named people, but jobs differ. */ -}}
+{{- $directors := slice -}}{{- $writers := slice -}}{{- $cast := slice -}}
+{{- if reflect.IsMap . -}}
+  {{- if reflect.IsSlice .crew -}}{{- range .crew -}}{{- if reflect.IsMap . -}}{{- if and .name (eq (printf "%T" .name) "string") -}}
+    {{- $person := dict "name" .name "id" (.id | default "") -}}
+    {{- $jobs := slice (.job | default "") -}}
+    {{- if reflect.IsSlice .jobs -}}{{- range .jobs -}}{{- if reflect.IsMap . -}}{{- with .job -}}{{- $jobs = $jobs | append . -}}{{- end -}}{{- end -}}{{- end -}}{{- end -}}
+    {{- if in $jobs "Director" -}}{{- $directors = $directors | append $person -}}{{- end -}}
+    {{- range $job := slice "Screenplay" "Writer" "Teleplay" "Story" -}}{{- if in $jobs $job -}}{{- $writers = $writers | append $person -}}{{- break -}}{{- end -}}{{- end -}}
+  {{- end -}}{{- end -}}{{- end -}}{{- end -}}
+  {{- if reflect.IsSlice .cast -}}{{- range .cast -}}{{- if reflect.IsMap . -}}{{- if and .name (eq (printf "%T" .name) "string") -}}
+    {{- $cast = $cast | append (dict "name" .name "id" (.id | default "")) -}}
+  {{- end -}}{{- end -}}{{- end -}}{{- end -}}
+{{- end -}}
+{{- return (dict "directors" (uniq $directors) "writers" (uniq $writers) "cast" (uniq $cast)) -}}

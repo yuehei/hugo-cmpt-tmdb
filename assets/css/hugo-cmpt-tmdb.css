@@ -1,0 +1,123 @@
+/* TMDB-inspired movie/TV detail cards. All rules are component-scoped.
+   FixIt v1 switches data-theme-mode; auto follows the system preference. */
+.tmdb-card {
+  --tmdb-accent: #087da0;
+  --tmdb-bg: #f4f8fa;
+  --tmdb-border: #d8e2e9;
+  --tmdb-muted: #627582;
+  --tmdb-media-bg: #0d253f;
+  --tmdb-padding: 1.125rem;
+  display: grid;
+  grid-template-columns: var(--tmdb-cover-width, 13.333rem) minmax(0, 1fr);
+  align-items: stretch;
+  column-gap: var(--tmdb-padding);
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 1.5rem 0;
+  padding: var(--tmdb-padding);
+  border: 0.0625rem solid var(--tmdb-border);
+  border-radius: var(--tmdb-radius, .75rem);
+  background: var(--tmdb-bg);
+  color: inherit;
+  font-size: .9375rem;
+  line-height: 1.65;
+  text-align: start;
+}
+[data-theme-mode="dark"] .tmdb-card {
+  --tmdb-accent: #64d4f2;
+  --tmdb-bg: #142c3e;
+  --tmdb-border: #2c475a;
+  --tmdb-muted: #b1c1cc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme-mode="light"]) .tmdb-card {
+    --tmdb-accent: #64d4f2;
+    --tmdb-bg: #142c3e;
+    --tmdb-border: #2c475a;
+    --tmdb-muted: #b1c1cc;
+  }
+}
+/* 海报和文字共享卡片内边距；海报保持 2:3 且固定顶部对齐，
+   右侧内容增高时不拉伸海报，也不在垂直方向居中。 */
+.tmdb-card--text-only { grid-template-columns: minmax(0, 1fr); }
+.tmdb-card .tmdb-card__cover-link {
+  position: relative;
+  display: block;
+  min-width: 0;
+  align-self: start;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--tmdb-media-bg);
+}
+.tmdb-card img.tmdb-card__cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: var(--tmdb-cover-position, center);
+  margin: 0;
+  border-radius: 0;
+}
+.tmdb-card__body { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow-wrap: anywhere; }
+.tmdb-card .tmdb-card__body p { margin: .25rem 0 0; }
+.tmdb-card__header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; }
+.tmdb-card__header-main { min-width: 0; }
+.tmdb-card__type { display: block; margin-bottom: .25rem; color: var(--tmdb-accent); font-size: .8125rem; font-weight: 600; line-height: 1.4; }
+.tmdb-card__title-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .55rem; }
+.tmdb-card a.tmdb-card__title { color: inherit; font-size: clamp(1.375rem, 1.9vw, 1.75rem); font-weight: 750; line-height: 1.35; text-decoration: none; border: 0; }
+.tmdb-card__year { color: var(--tmdb-muted); font-size: 1.25rem; font-weight: 400; }
+.tmdb-card a:hover { color: var(--tmdb-accent); }
+.tmdb-card a:focus-visible { outline: 0.125rem solid var(--tmdb-accent); outline-offset: 0.1875rem; }
+.tmdb-card .tmdb-card__cover-link:focus-visible { outline-offset: -0.1875rem; }
+.tmdb-card__meta { color: var(--tmdb-muted); font-size: .875rem; }
+.tmdb-card__facts { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .6rem; margin-top: .5rem; color: var(--tmdb-muted); font-size: .875rem; font-weight: 400; line-height: 1.6; }
+.tmdb-card__facts .tmdb-card__meta { font-size: inherit; }
+.tmdb-card__facts > span { display: inline; }
+/* Exclude the metadata row's leading so the border hugs the glyphs. */
+.tmdb-card__certification { border: 0.0625rem solid currentColor; padding: 0 .2rem; font-size: inherit; line-height: 1; }
+/* Keep metadata on the second row; narrow screens wrap it rather than clip. */
+@media (min-width: 62.5rem) { .tmdb-card__header { column-gap: .75rem; } }
+.tmdb-card__rating { display: flex; flex-direction: column; align-items: center; gap: .25rem; margin: 0; min-width: 4rem; }
+/* A static SVG score ring, inspired by TMDB; no chart library or JS. */
+.tmdb-card__score-badge { position: relative; display: grid; place-items: center; flex: 0 0 3.25rem; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: #081c22; color: #fff; }
+.tmdb-card__score-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tmdb-card__score-track { fill: none; stroke: #214e39; stroke-width: 3; }
+.tmdb-card__score-progress { fill: none; stroke: #21d07a; stroke-width: 3; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+.tmdb-card__score { position: relative; font-size: 1.125rem; font-weight: 750; }
+.tmdb-card__rating-caption { display: grid; justify-items: center; gap: .15rem; line-height: 1.4; white-space: nowrap; }
+.tmdb-card__source { font-size: .8125rem; font-weight: 650; }
+.tmdb-card__scale { color: var(--tmdb-muted); font-size: .6875rem; }
+.tmdb-card__overview { margin-top: .25rem; }
+.tmdb-card__summary-title { font-size: .9375rem; font-weight: 650; }
+.tmdb-card__summary { font-size: .9375rem; line-height: 1.65; }
+/* 导演、编剧、主演各自分行：导演和编剧各一行，主演最多两行。 */
+.tmdb-card .tmdb-card__body .tmdb-card__credits { margin: .5rem 0; color: var(--tmdb-muted); font-size: .875rem; font-weight: 400; line-height: 1.5; }
+.tmdb-card .tmdb-card__credits p:first-child { margin-top: 0; }
+.tmdb-card__crew { min-width: 0; max-height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* FixIt 的链接默认允许换行，此处继承演职员段落的一行约束。 */
+.tmdb-card .tmdb-card__crew a { white-space: inherit; }
+.tmdb-card__cast { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-height: 3em; overflow: hidden; }
+.tmdb-card a.tmdb-card__person { color: inherit; text-decoration: none; border: 0; }
+.tmdb-card a.tmdb-card__person:hover { color: var(--tmdb-accent); text-decoration: underline; }
+/* Anchor the personal score at the bottom of the desktop information column. */
+.tmdb-card__personal-rating { margin-top: auto; padding-top: .65rem; border-top: 0.0625rem solid var(--tmdb-border); font-size: 1rem; }
+.tmdb-card__personal { color: var(--tmdb-accent); font-weight: 600; }
+/* 来源链接与电影/电视剧类型同行；官方标志与免责声明保留在 About/Credits。 */
+.tmdb-card .tmdb-card__type a.tmdb-card__attribution { display: inline-block; margin-inline-start: .5rem; color: var(--tmdb-muted); font-size: .75rem; font-weight: 400; text-decoration: none; border: 0; white-space: nowrap; }
+.tmdb-card .tmdb-card__type a.tmdb-card__attribution:hover { color: var(--tmdb-accent); text-decoration: underline; }
+/* Phones: a shallow golden-ratio media area above the metadata. */
+@media (max-width: 37.5rem) {
+  .tmdb-card { --tmdb-padding: 1.25rem; grid-template-columns: minmax(0, 1fr); row-gap: var(--tmdb-padding); }
+  .tmdb-card .tmdb-card__cover-link { min-height: 0; aspect-ratio: var(--tmdb-mobile-poster-ratio, 1.618 / 1); }
+  .tmdb-card__personal-rating { margin-top: 1rem; }
+  .tmdb-card__header { gap: .75rem; }
+  .tmdb-card a.tmdb-card__title { font-size: 1.5rem; }
+  .tmdb-card__year { font-size: 1.125rem; }
+}
+@media print {
+  .tmdb-card { break-inside: avoid; --tmdb-bg: transparent; --tmdb-muted: #555; --tmdb-border: #aaa; --tmdb-accent: #222; }
+}
