@@ -45,11 +45,15 @@
     {{- end -}}
   {{- end -}}
   {{- range $key, $value := $fields -}}{{- $item.Set $key $value -}}{{- end -}}
-  {{- if not ($item.Get "title") -}}
+  {{- $validTitle := false -}}
+  {{- if eq (printf "%T" ($item.Get "title")) "string" -}}
+    {{- $validTitle = ne (strings.TrimSpace ($item.Get "title")) "" -}}
+  {{- end -}}
+  {{- if not $validTitle -}}
     {{- if $missingCredentials -}}
       {{- errorf "tmdb: hybrid source needs a local title or API credentials (params.tmdb.api.token/api_key or api.credentials_file) for %s/%s (%s)" $type $id .Position -}}
     {{- else -}}
-      {{- errorf "tmdb: title is required in shortcode attributes or the configured local.data_dir/%s/%s.json (or YAML/TOML) (%s)" $type $id .Position -}}
+      {{- errorf "tmdb: title is required and must be a non-empty string in shortcode attributes or the configured local.data_dir/%s/%s.json (or YAML/TOML) (%s)" $type $id .Position -}}
     {{- end -}}
   {{- else -}}
     {{- $ctx := dict "page" .Page "item" $item.Values "type" $type "id" $id "options" $options "position" .Position -}}

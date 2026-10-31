@@ -4,7 +4,7 @@
 {{- $remote := "" -}}
 {{- if $cover -}}
   {{- if and (strings.HasPrefix $cover "/") (not (strings.HasPrefix $cover "//")) -}}
-    {{- $result = $cover | relURL -}}
+    {{- $result = strings.TrimPrefix "/" $cover | relURL -}}
   {{- else -}}
     {{- $remote = partial "tmdb/endpoint.html" (dict "url" $cover "name" "cover") -}}
   {{- end -}}

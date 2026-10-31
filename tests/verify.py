@@ -117,6 +117,26 @@ try:
     credits=(output/'credits/index.html').read_text()
     assert '/images/hugo-cmpt-tmdb/logo.svg' in credits
     assert 'This product uses the TMDB API but is not endorsed or certified by TMDB.' in credits
+    # Local posters must retain the deployment prefix, just like generated resources.
+    build(extra=('--baseURL','https://example.org/blog/'))
+    for card in read_cards():
+        for image in card['images']:
+            assert image['src'].startswith('/blog/images/tmdb/'), image['src']
+            assert (output/image['src'].removeprefix('/blog/')).is_file()
+    build()
+    # Validate the final title after local and shortcode overrides have been merged.
+    title_file=site/'data/tmdb/movie/550.json'
+    saved_title_data=title_file.read_text()
+    for invalid_title in ['   ',123]:
+        record=json.loads(saved_title_data);record['title']=invalid_title
+        title_file.write_text(json.dumps(record))
+        assert 'title is required and must be a non-empty string' in build(False)
+    title_file.write_text(saved_title_data)
+    title_content=site/'content/cards.md';saved_title_content=title_content.read_text()
+    title_content.write_text(saved_title_content.replace('id="550" >','id="550" title="   " >',1))
+    assert 'title is required and must be a non-empty string' in build(False)
+    title_content.write_text(saved_title_content)
+    build()
     # Attribution defaults on and resolves explicit false at all configuration levels.
     saved_config=(site/'hugo.toml').read_text()
     saved_content=(site/'content/cards.md').read_text()
